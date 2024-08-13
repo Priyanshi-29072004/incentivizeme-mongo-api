@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const app = express();
 const employeeRouter = require("./routes/employees");
+const projectRouter = require("./routes/projects");
 const cors = require("cors");
 
 app.use(express.json()); // Middleware to parse JSON
@@ -32,3 +33,4 @@ app.listen(PORT, () => {
 });
 
 app.use("/api/employees", employeeRouter);
+app.use("/api/projects", projectRouter);
