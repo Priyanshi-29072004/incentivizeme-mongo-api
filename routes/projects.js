@@ -16,27 +16,29 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const projects = new Project({
     name: req.body.name,
+    date: req.body.date,
   });
 
   try {
-    const newEmployee = await projects.save();
-    res.status(201).json(newEmployee);
+    const newProject = await projects.save();
+    res.status(201).json(newProject);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 router.put("/:id", async (req, res) => {
   try {
-    const projects = await Project.findById(req.params.id);
-    if (!projects) {
+    const project = await Project.findById(req.params.id);
+    if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // Update the employee's fields
-    projects.name = req.body.name || projects.name;
+    // Update fields
+    project.name = req.body.name || project.name;
+    project.date = req.body.date || project.date; // Add this line to handle the date field
 
-    const updatedEmployee = await projects.save();
-    res.json(updatedEmployee);
+    const updatedProject = await project.save();
+    res.json(updatedProject);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

@@ -1,10 +1,8 @@
 const mongoose = require("mongoose");
 
-const ProjectSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
+const projectSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  date: { type: Date, default: Date.now }, // Add this field
 });
 
-module.exports = mongoose.model("Project", ProjectSchema);
+module.exports = mongoose.model("Project", projectSchema);
