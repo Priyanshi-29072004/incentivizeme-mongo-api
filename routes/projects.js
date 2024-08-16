@@ -2,59 +2,73 @@ const express = require("express");
 const router = express.Router();
 const Project = require("../models/Project");
 
-// Get all Project
+// Get all projects with employee details
 router.get("/", async (req, res) => {
   try {
-    const projects = await Project.find();
-    res.json(projects);
+    // Populate employee details and format the response
+    const projects = await Project.find()
+      .populate({
+        path: "employees",
+        select: "firstName lastName", // Select only the fields you need
+      })
+      .exec();
+
+    // Format the response to include employee ID and name
+    const formattedProjects = projects.map((project) => ({
+      ...project.toObject(),
+      employees: project.employees.map((employee) => ({
+        id: employee._id,
+        name: `${employee.firstName} ${employee.lastName}`,
+      })),
+    }));
+
+    res.json(formattedProjects);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Add an Project
+// Create a new project
 router.post("/", async (req, res) => {
-  const projects = new Project({
-    name: req.body.name,
-    date: req.body.date,
-  });
-
+  const { name, date, employees } = req.body;
   try {
-    const newProject = await projects.save();
-    res.status(201).json(newProject);
+    const newProject = new Project({ name, date, employees }); // Add employees to the project
+    const savedProject = await newProject.save();
+    res.status(201).json(savedProject);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
+
+// Update a project by ID
 router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, date, employees } = req.body;
   try {
-    const project = await Project.findById(req.params.id);
-    if (!project) {
-      return res.status(404).json({ message: "Project not found" });
-    }
-
-    // Update fields
-    project.name = req.body.name || project.name;
-    project.date = req.body.date || project.date; // Add this line to handle the date field
-
-    const updatedProject = await project.save();
+    const updatedProject = await Project.findByIdAndUpdate(
+      id,
+      { name, date, employees }, // Update the employees field
+      { new: true, runValidators: true }
+    );
+    if (!updatedProject)
+      return res.status(404).json({ error: "Project not found" });
     res.json(updatedProject);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
-router.delete("/:id", async (req, res) => {
-  try {
-    const projects = await Project.findById(req.params.id);
-    if (!projects) {
-      return res.status(404).json({ message: "Project not found" });
-    }
 
-    // Delete the project
-    await Project.deleteOne({ _id: req.params.id });
-    res.json({ message: "Project deleted successfully" });
+// Delete a project by ID
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedProject = await Project.findByIdAndDelete(id);
+    if (!deletedProject)
+      return res.status(404).json({ error: "Project not found" });
+    res.json(deletedProject);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
+
 module.exports = router;
