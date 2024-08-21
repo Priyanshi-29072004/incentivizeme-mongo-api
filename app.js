@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const app = express();
 const employeeRouter = require("./routes/employees");
 const projectRouter = require("./routes/projects");
+const attendanceRouter = require("./routes/attendances");
+const authRouter = require("./routes/auth");
 const cors = require("cors");
 
 app.use(express.json()); // Middleware to parse JSON
@@ -11,6 +13,12 @@ app.use(
     origin: "http://localhost:3000", // Replace with your React app's origin
   })
 );
+
+// Use the routers
+app.use("/api", authRouter); // Use /api/auth for authentication routes
+app.use("/api/employees", employeeRouter);
+app.use("/api/projects", projectRouter);
+app.use("/api/attendances", attendanceRouter);
 
 // Connect to MongoDB
 mongoose
@@ -31,6 +39,3 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-app.use("/api/employees", employeeRouter);
-app.use("/api/projects", projectRouter);

@@ -1,3 +1,4 @@
+// routes/projects.js
 const express = require("express");
 const router = express.Router();
 const Project = require("../models/Project");
@@ -5,15 +6,13 @@ const Project = require("../models/Project");
 // Get all projects with employee details
 router.get("/", async (req, res) => {
   try {
-    // Populate employee details and format the response
     const projects = await Project.find()
       .populate({
         path: "employees",
-        select: "firstName lastName", // Select only the fields you need
+        select: "firstName lastName",
       })
       .exec();
 
-    // Format the response to include employee ID and name
     const formattedProjects = projects.map((project) => ({
       ...project.toObject(),
       employees: project.employees.map((employee) => ({
@@ -30,14 +29,30 @@ router.get("/", async (req, res) => {
 
 // Create a new project
 router.post("/", async (req, res) => {
-  const { name, date, employees } = req.body;
+  const {
+    name,
+    startDate,
+    endDate,
+    estimatedCompletionDate,
+    employees,
+    status,
+    bonus,
+  } = req.body;
   try {
-    const newProject = new Project({ name, date, employees }); // Add employees to the project
+    const newProject = new Project({
+      name,
+      startDate,
+      endDate,
+      estimatedCompletionDate, // Add this line
+      employees,
+      status,
+      bonus,
+    });
     const savedProject = await newProject.save();
     const populatedProject = await Project.findById(savedProject._id)
       .populate({
         path: "employees",
-        select: "firstName lastName", // Select only the fields you need
+        select: "firstName lastName",
       })
       .exec();
 
@@ -58,18 +73,31 @@ router.post("/", async (req, res) => {
 // Update a project by ID
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { name, date, employees } = req.body;
-  console.log("Request to update project:", { id, name, date, employees });
-
+  const {
+    name,
+    startDate,
+    endDate,
+    estimatedCompletionDate,
+    employees,
+    status,
+    bonus,
+  } = req.body;
   try {
     const updatedProject = await Project.findByIdAndUpdate(
       id,
-      { name, date, employees },
+      {
+        name,
+        startDate,
+        endDate,
+        estimatedCompletionDate,
+        employees,
+        status,
+        bonus,
+      }, // Add this line
       { new: true, runValidators: true }
     );
 
     if (!updatedProject) {
-      console.log("Project not found:", id);
       return res.status(404).json({ error: "Project not found" });
     }
 
@@ -90,7 +118,6 @@ router.put("/:id", async (req, res) => {
 
     res.json(formattedProject);
   } catch (err) {
-    console.error("Error updating project:", err.message);
     res.status(400).json({ error: err.message });
   }
 });
