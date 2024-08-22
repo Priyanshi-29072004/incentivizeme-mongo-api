@@ -17,7 +17,6 @@ const attendanceSchema = new mongoose.Schema({
   },
   endTime: {
     type: Date,
-    required: true,
   },
   totalHours: {
     type: Number,
@@ -28,16 +27,6 @@ const attendanceSchema = new mongoose.Schema({
     enum: ["regular", "bonus"], // Limit to these two options
     default: "regular", // Default value
   },
-});
-
-// Pre-save middleware to calculate totalHours
-attendanceSchema.pre("save", function (next) {
-  if (this.isModified("startTime") || this.isModified("endTime")) {
-    const start = new Date(this.startTime);
-    const end = new Date(this.endTime);
-    this.totalHours = (end - start) / (1000 * 60 * 60); // Convert milliseconds to hours
-  }
-  next();
 });
 
 module.exports = mongoose.model("Attendance", attendanceSchema);

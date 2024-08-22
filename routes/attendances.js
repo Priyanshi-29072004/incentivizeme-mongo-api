@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
       startTime: record.startTime,
       endTime: record.endTime,
       totalHours: record.totalHours,
-      type: record.type || "regular", // Default to 'regular' if type is undefined
+      type: record.type || "regular",
     }));
 
     res.json(formattedAttendance);
@@ -42,8 +42,11 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const { employee, project, startTime, endTime, type } = req.body;
   try {
-    const totalHours =
-      (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60);
+    const totalHours = endTime
+      ? (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60)
+      : 0;
+    console.log(">>>>>>endTime", endTime, totalHours);
+
     const newAttendance = new Attendance({
       employee,
       project,

@@ -1,9 +1,10 @@
 // routes/projects.js
 const express = require("express");
 const router = express.Router();
-const Project = require("../models/Project");
+const Project = require("../models/project");
+const Attendance = require("../models/attendance");
+const Payroll = require("../models/Payroll");
 
-// Get all projects with employee details
 router.get("/", async (req, res) => {
   try {
     const projects = await Project.find()
@@ -132,6 +133,69 @@ router.delete("/:id", async (req, res) => {
     res.json(deletedProject);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/mark-complete", async (req, res) => {
+  const { projectIds } = req.body;
+
+  if (!Array.isArray(projectIds) || projectIds.length === 0) {
+    return res.status(400).json({ error: "No project IDs provided" });
+  }
+
+  try {
+    const today = new Date();
+    const projects = await Project.find({ _id: { $in: projectIds } }).populate(
+      "employees"
+    );
+
+    if (!projects.length) {
+      return res.status(404).json({ error: "No projects found" });
+    }
+
+    // Update projects with end date
+    await Project.updateMany(
+      { _id: { $in: projectIds } },
+      { $set: { endDate: today, status: "completed" } }
+    );
+
+    // Process bonuses and create payroll records
+    for (const project of projects) {
+      if (project.endDate < project.estimatedCompletionDate) {
+        const totalBonus = project.bonus || 0;
+        const numEmployees = project.employees.length;
+        const bonusPerEmployee = totalBonus / numEmployees;
+
+        // Calculate total hours worked per employee for this project
+        for (const employee of project.employees) {
+          const attendanceRecords = await Attendance.find({
+            project: project._id,
+            employee: employee._id,
+            endTime: { $exists: true }, // Ensure endTime exists
+          });
+
+          const totalHours = attendanceRecords.reduce((sum, record) => {
+            return sum + (record.totalHours || 0); // Use the existing totalHours field
+          }, 0);
+
+          // Create payroll record
+          await Payroll.create({
+            employee: employee._id,
+            project: project._id,
+            totalHours,
+            bonus: bonusPerEmployee,
+            payDate: today,
+          });
+        }
+      }
+    }
+
+    res
+      .status(200)
+      .json({ message: "Projects marked as complete and payroll processed" });
+  } catch (error) {
+    console.error("Error marking projects complete:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
