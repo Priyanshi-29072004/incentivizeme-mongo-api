@@ -16,12 +16,16 @@ router.get("/", async (req, res) => {
       })
       .exec();
 
+    console.log(attendanceRecords);
+
     const formattedAttendance = attendanceRecords.map((record) => ({
       _id: record._id,
-      employee: {
-        _id: record.employee._id,
-        name: `${record.employee.firstName} ${record.employee.lastName}`,
-      },
+      employee: record.employee
+        ? {
+            _id: record.employee._id,
+            name: `${record.employee.firstName} ${record.employee.lastName}`,
+          }
+        : null,
       project: {
         _id: record.project._id,
         name: record.project.name,
